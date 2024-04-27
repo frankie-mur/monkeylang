@@ -11,6 +11,9 @@ import (
 
 const PROMPT = ">> "
 
+// Start is the main entry point for the REPL (Read-Eval-Print Loop). It reads input from the provided io.Reader,
+// tokenizes the input using the lexer, and prints the resulting tokens to the provided io.Writer.
+// The REPL runs in an infinite loop, prompting the user for input and processing it until an error or EOF is encountered.
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 
