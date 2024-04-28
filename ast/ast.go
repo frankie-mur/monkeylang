@@ -46,6 +46,17 @@ type LetStatement struct {
 func (l *LetStatement) statementNode()       {}
 func (l *LetStatement) TokenLiteral() string { return l.Token.Literal }
 
+// ReturnStatement represents the return statement in the language.
+// It holds the 'return' token and the expression to be returned.
+type ReturnStatement struct {
+	Token token.Token // the'return' token
+	Value Expression
+}
+
+// Methods on ReturnStatement to satisfy the Statement interface.
+func (r *ReturnStatement) statementNode()       {}
+func (r *ReturnStatement) TokenLiteral() string { return r.Token.Literal }
+
 type Identifier struct {
 	Token token.Token // the token.IDENT token
 	Value string
