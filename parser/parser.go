@@ -2,10 +2,23 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/frankie-mur/monkeylang/ast"
 	"github.com/frankie-mur/monkeylang/lexer"
 	"github.com/frankie-mur/monkeylang/token"
+)
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or!X
+	CALL        // myFunction(X)
+	INDEX       // array[index]
 )
 
 // Parser is a struct that holds the lexer and the current and peek tokens.
@@ -13,11 +26,19 @@ import (
 type Parser struct {
 	l *lexer.Lexer
 
-	errors []string
+	errors []string // errors encountered during parsing
 
 	curToken  token.Token
 	peekToken token.Token
+
+	prefixParseFns map[token.TokenType]prefixParseFn // maps token type to prefix parse function
+	infixParseFns  map[token.TokenType]infixParseFn  // maps token type to infix parse function
 }
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
@@ -29,11 +50,46 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+
 	return p
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &ast.IntegerLiteral{Token: p.curToken}
+	val, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	lit.Value = val
+	return lit
 }
 
 func (p *Parser) Errors() []string {
 	return p.errors
+}
+
+// registerPrefix registers a prefix parse function for the given token type.
+// The prefix parse function is responsible for parsing expressions that begin
+// with the given token type.
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+// registerInfix registers an infix parsing function for the given token type.
+// The infix parsing function is used to parse expressions that contain the
+// given token type as an infix operator.
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
 
 // nextToken advances the parser to the next token in the input stream.
@@ -69,9 +125,20 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
+	//default case will always be a expression statement if not a let or return statement
 	default:
+		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
 		return nil
 	}
+	leftExp := prefix()
+
+	return leftExp
 }
 
 // parseLetStatement parses a let statement, which declares a new variable
@@ -105,6 +172,18 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	p.nextToken()
 
 	for !p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 

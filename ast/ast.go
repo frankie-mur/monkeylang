@@ -120,6 +120,8 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
+// Identifier represents an identifier token in the AST.
+// The Token field holds the token.IDENT token, and the Value field holds the identifier value.
 type Identifier struct {
 	Token token.Token // the token.IDENT token
 	Value string
@@ -129,6 +131,18 @@ type Identifier struct {
 func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i *Identifier) String() string       { return i.Value }
+
+// IntegerLiteral represents an integer literal expression in the AST.
+// The Token field holds the token.INT token, and the Value field holds the integer value.
+type IntegerLiteral struct {
+	Token token.Token // the token.INT token
+	Value int64
+}
+
+// Methods on IntegerLiteral to satisfy the Expression interface.
+func (il *IntegerLiteral) expressionNode()      {}
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string       { return il.Token.Literal }
 
 // TokenLiteral returns the token literal of the first statement in the program.
 // If the program has no statements, it returns an empty string.
