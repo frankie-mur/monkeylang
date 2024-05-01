@@ -166,6 +166,30 @@ func (pe *PrefixExpression) String() string {
 	return out.String()
 }
 
+// InfixExpression represents an infix expression in the AST.
+// It contains the operator token, the left and right expressions.
+type InfixExpression struct {
+	Token    token.Token // the operator token, e.g. +, -, etc.
+	Operator string
+	Left     Expression // expression to the left of the operator
+	Right    Expression // expression to the right of the operator
+}
+
+// Methods on InfixExpression to satisfy the Expression interface.
+func (ie *InfixExpression) expressionNode()      {}
+func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *InfixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" " + ie.Operator + " ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
 // TokenLiteral returns the token literal of the first statement in the program.
 // If the program has no statements, it returns an empty string.
 func (p *Program) TokenLiteral() string {
