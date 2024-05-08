@@ -190,6 +190,19 @@ func (ie *InfixExpression) String() string {
 	return out.String()
 }
 
+// Boolean represents a boolean value in the Monkey programming language.
+// It contains a Token, which is the token that represents the boolean value,
+// and a Value field that holds the actual boolean value.
+type Boolean struct {
+	Token token.Token
+	Value bool
+}
+
+// Methods on Boolean to satisfy the Expression interface.
+func (b *Boolean) expressionNode()      {}
+func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
+func (b *Boolean) String() string       { return b.Token.Literal }
+
 // TokenLiteral returns the token literal of the first statement in the program.
 // If the program has no statements, it returns an empty string.
 func (p *Program) TokenLiteral() string {

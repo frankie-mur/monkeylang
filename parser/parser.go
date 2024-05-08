@@ -66,6 +66,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(token.TRUE, p.parseBoolean)
+	p.registerPrefix(token.FALSE, p.parseBoolean)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -95,6 +97,9 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+// parseInfixExpression parses an infix expression, which consists of a left operand,
+// an operator, and a right operand. It returns an ast.InfixExpression with the
+// operator, left operand, and right operand set.
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	defer untrace(trace("parseInfixExpression"))
 	expression := &ast.InfixExpression{
@@ -107,6 +112,14 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression.Right = p.parseExpression(precedence)
 
 	return expression
+}
+
+// parseBoolean parses a boolean literal expression. It returns an ast.Boolean
+// expression with the value set to true if the current token is the "true"
+// keyword, and false if the current token is the "false" keyword.
+func (p *Parser) parseBoolean() ast.Expression {
+	defer untrace(trace("parseBoolean"))
+	return &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(token.TRUE)}
 }
 
 func (p *Parser) peekPrecedence() int {
