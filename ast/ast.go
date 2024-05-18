@@ -83,8 +83,9 @@ func (ls *LetStatement) String() string {
 // ReturnStatement represents the return statement in the language.
 // It holds the 'return' token and the expression to be returned.
 type ReturnStatement struct {
-	Token token.Token // the'return' token
-	Value Expression
+	Token       token.Token // the'return' token
+	Value       Expression
+	ReturnValue Expression
 }
 
 // Methods on ReturnStatement to satisfy the Statement interface.
