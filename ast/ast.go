@@ -251,6 +251,8 @@ func (bs *BlockStatement) String() string {
 	return out.String()
 }
 
+// FunctionLiteral represents a function literal expression in the Monkey programming language.
+// It contains the 'fn' token, the function parameters, and the function body.
 type FunctionLiteral struct {
 	Token      token.Token   // the 'fn' token
 	Parameters []*Identifier // the function parameters
@@ -273,6 +275,33 @@ func (fl *FunctionLiteral) String() string {
 	out.WriteString(strings.Join(params, ", "))
 	out.WriteString(") ")
 	out.WriteString(fl.Body.String())
+
+	return out.String()
+}
+
+// CallExpression represents a function call expression in the AST.
+// It contains the function being called, and the arguments passed to it.
+type CallExpression struct {
+	Token     token.Token // the '(' token
+	Function  Expression  // Identifier or FunctionLiteral
+	Arguments []Expression
+}
+
+// // Methods on callExpression to satisfy the Expression interface.
+func (ce *CallExpression) expressionNode()      {}
+func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *CallExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, a := range ce.Arguments {
+		args = append(args, a.String())
+	}
+
+	out.WriteString(ce.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
 
 	return out.String()
 }

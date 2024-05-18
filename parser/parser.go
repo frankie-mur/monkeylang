@@ -30,6 +30,7 @@ var precedences = map[token.TokenType]int{
 	token.ASTERISK: PRODUCT,
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 // Parser is a struct that holds the lexer and the current and peek tokens.
@@ -81,6 +82,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
 	return p
 }
@@ -257,6 +259,41 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	return identifiers
+}
+
+// parseCallExpression parses a function call expression, including the function name and its arguments.
+// It returns an ast.CallExpression node representing the parsed function call.
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	exp := &ast.CallExpression{Token: p.curToken, Function: function}
+	exp.Arguments = p.parseCallArguements()
+	return exp
+}
+
+// parseCallArguments parses the arguments for a function call. It expects the
+// opening parenthesis to have already been consumed. It returns a slice of
+// ast.Expression representing the arguments.
+func (p *Parser) parseCallArguements() []ast.Expression {
+	args := []ast.Expression{}
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return args
 }
 
 func (p *Parser) peekPrecedence() int {
