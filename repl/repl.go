@@ -7,6 +7,7 @@ import (
 
 	"github.com/frankie-mur/monkeylang/evaluator"
 	"github.com/frankie-mur/monkeylang/lexer"
+	"github.com/frankie-mur/monkeylang/object"
 	"github.com/frankie-mur/monkeylang/parser"
 )
 
@@ -17,6 +18,7 @@ const PROMPT = ">> "
 // The REPL runs in an infinite loop, prompting the user for input and processing it until an error or EOF is encountered.
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnvironment()
 
 	for {
 		fmt.Print(PROMPT)
@@ -37,7 +39,7 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		evauluated := evaluator.Eval(program)
+		evauluated := evaluator.Eval(program, env)
 		if evauluated != nil {
 			io.WriteString(out, evauluated.Inspect())
 			io.WriteString(out, "\n")
