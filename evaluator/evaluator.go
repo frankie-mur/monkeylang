@@ -67,8 +67,24 @@ func Eval(node ast.Node, env *object.Enviroment) object.Object {
 		}
 		return &object.ReturnValue{Value: val}
 
+	case *ast.CallExpression:
+		function := Eval(node.Function, env)
+		if isError(function) {
+			return function
+		}
+		args := evalExpressions(node.Arguments, env)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+		return applyFunction(function, args)
+
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
+
+	case *ast.FunctionLiteral:
+		params := node.Parameters
+		body := node.Body
+		return &object.Function{Parameters: params, Body: body, Env: env}
 
 	}
 
@@ -214,6 +230,62 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Enviroment) object.Objec
 	} else {
 		return NULL
 	}
+}
+
+// applyFunction applies the given function object to the provided arguments.
+// It creates an extended environment for the function, evaluates the function body,
+// and returns the unwrapped return value.
+func applyFunction(fn object.Object, args []object.Object) object.Object {
+	function, ok := fn.(*object.Function)
+	if !ok {
+		return newError("not a function: %s", fn.Type())
+	}
+	extendedEnv := extendFunctionEnv(function, args)
+	evaluated := Eval(function.Body, extendedEnv)
+	return unwrapReturnValue(evaluated)
+}
+
+// extendFunctionEnv creates a new environment that encloses the function's environment
+// and sets the function's parameters to the provided arguments.
+func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Enviroment {
+	env := object.NewEnclosedEnvironment(fn.Env)
+
+	for paramIdx, param := range fn.Parameters {
+		env.Set(param.Value, args[paramIdx])
+	}
+
+	return env
+}
+
+// unwrapReturnValue takes an Object and returns the value contained within it.
+// If the Object is a ReturnValue, it returns the Value field of the ReturnValue.
+// Otherwise, it simply returns the original Object.
+func unwrapReturnValue(obj object.Object) object.Object {
+	if returnValue, ok := obj.(*object.ReturnValue); ok {
+		return returnValue.Value
+	}
+	return obj
+}
+
+// evalExpressions evaluates a slice of expressions in the given environment
+// and returns a slice of the resulting objects.
+// If any of the expressions result in an error, the function will return
+// a slice containing only the error object.
+func evalExpressions(
+	exps []ast.Expression,
+	env *object.Enviroment,
+) []object.Object {
+	var result []object.Object
+
+	for _, e := range exps {
+		evaluated := Eval(e, env)
+		if isError(evaluated) {
+			return []object.Object{evaluated}
+		}
+		result = append(result, evaluated)
+	}
+
+	return result
 }
 
 // Monkeylang evalutes truthy expressions (non NULL and non false)
