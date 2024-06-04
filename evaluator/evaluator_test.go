@@ -266,6 +266,20 @@ func TestFunctionApplication(t *testing.T) {
 	}
 }
 
+func TestStringObject(t *testing.T) {
+	input := `"Hello World!"`
+	expected := "Hello World!"
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Errorf("object is not String. got=%T (%+v)", evaluated, evaluated)
+		return
+	}
+	if str.Value != expected {
+		t.Errorf("String has wrong value. got=%q", str.Value)
+	}
+}
+
 func testNullObject(t *testing.T, obj object.Object) bool {
 	if obj != NULL {
 		t.Errorf("object is not NULL. got=%T (%v)", obj, obj)
