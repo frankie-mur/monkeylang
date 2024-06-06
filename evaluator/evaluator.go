@@ -211,15 +211,25 @@ func evalStringInfixExpression(
 	}
 }
 
+// evalIdentifier evaluates an identifier node in the given environment. It first
+// looks up the identifier in the environment, and if found, returns the
+// associated value. If not found in the environment, it checks if the
+// identifier is a built-in function, and if so, returns the built-in function
+// object. If the identifier is not found in either the environment or the
+// built-ins, it returns an error.
 func evalIdentifier(
 	node *ast.Identifier,
 	env *object.Enviroment,
 ) object.Object {
-	value, ok := env.Get(node.Value)
-	if !ok {
-		return newError("identifier not found: %s", node.Value)
+	if value, ok := env.Get(node.Value); ok {
+		return value
 	}
-	return value
+
+	if builtin, ok := builtins[node.Value]; ok {
+		return builtin
+	}
+
+	return newError("identifier not found: %s", node.Value)
 }
 
 func evalBangOperatorExpression(right object.Object) object.Object {
@@ -260,13 +270,19 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Enviroment) object.Objec
 // It creates an extended environment for the function, evaluates the function body,
 // and returns the unwrapped return value.
 func applyFunction(fn object.Object, args []object.Object) object.Object {
-	function, ok := fn.(*object.Function)
-	if !ok {
+	switch fn := fn.(type) {
+
+	case *object.Function:
+		extendedEnv := extendFunctionEnv(fn, args)
+		evaluated := Eval(fn.Body, extendedEnv)
+		return unwrapReturnValue(evaluated)
+
+	case *object.Builtin:
+		return fn.Fn(args...)
+
+	default:
 		return newError("not a function: %s", fn.Type())
 	}
-	extendedEnv := extendFunctionEnv(function, args)
-	evaluated := Eval(function.Body, extendedEnv)
-	return unwrapReturnValue(evaluated)
 }
 
 // extendFunctionEnv creates a new environment that encloses the function's environment

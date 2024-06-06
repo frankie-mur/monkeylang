@@ -18,6 +18,7 @@ const (
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
+	BUILTIN_OBJ      = "BUILTIN"
 )
 
 type Object interface {
@@ -89,3 +90,14 @@ func (f *Function) Inspect() string {
 
 	return out.String()
 }
+
+type BuiltinFunction func(args ...Object) Object
+
+// Builtin represents a built-in function in the programming language.
+// The Fn field is a function that implements the built-in behavior.
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
+func (b *Builtin) Inspect() string  { return "builtin function" }
