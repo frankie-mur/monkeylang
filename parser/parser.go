@@ -73,6 +73,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
+	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -227,6 +228,47 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return lit
 }
 
+// parseArrayLiteral parses an array literal expression. It returns an
+// ast.ArrayLiteral representing the parsed array.
+//
+// This function assumes the current token is the opening bracket '[' of the
+// array literal. It will parse the comma-separated list of expressions within
+// the brackets and return the complete ArrayLiteral expression.
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	array := &ast.ArrayLiteral{Token: p.curToken}
+	array.Elements = p.parseExpressionList(token.RBRACKET)
+
+	return array
+}
+
+// parseExpressionList parses a comma-separated list of expressions, terminated by the provided end token type.
+// It returns a slice of ast.Expression representing the parsed expressions.
+// This function assumes the current token is the first expression in the list.
+// It will parse the expressions, consuming tokens until it reaches the end token.
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	list := []ast.Expression{}
+
+	if p.peekTokenIs(end) {
+		p.nextToken()
+		return list
+	}
+
+	p.nextToken()
+	list = append(list, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		list = append(list, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(end) {
+		return nil
+	}
+
+	return list
+}
+
 // parseFunctionParameters parses a list of function parameters. It returns a slice
 // of *ast.Identifier representing the parameters.
 // // This function assumes the current token is the first identifier in the
@@ -266,35 +308,8 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 // It returns an ast.CallExpression node representing the parsed function call.
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguements()
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
 	return exp
-}
-
-// parseCallArguments parses the arguments for a function call. It expects the
-// opening parenthesis to have already been consumed. It returns a slice of
-// ast.Expression representing the arguments.
-func (p *Parser) parseCallArguements() []ast.Expression {
-	args := []ast.Expression{}
-
-	if p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
-		return args
-	}
-
-	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
-	}
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	return args
 }
 
 func (p *Parser) peekPrecedence() int {

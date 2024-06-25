@@ -317,6 +317,28 @@ func (ce *CallExpression) String() string {
 	return out.String()
 }
 
+// ArrayLiteral represents an array literal in the Monkey programming language.
+// It contains the '[' token, the elements of the array, and the ']' token.
+type ArrayLiteral struct {
+	Token    token.Token // the '[' token
+	Elements []Expression
+}
+
+func (al *ArrayLiteral) expressionNode()      {}
+func (al *ArrayLiteral) TokenLiteral() string { return al.Token.Literal }
+func (al *ArrayLiteral) String() string {
+	var out bytes.Buffer
+	elements := []string{}
+	for _, el := range al.Elements {
+		elements = append(elements, el.String())
+	}
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
 // TokenLiteral returns the token literal of the first statement in the program.
 // If the program has no statements, it returns an empty string.
 func (p *Program) TokenLiteral() string {
