@@ -339,6 +339,28 @@ func (al *ArrayLiteral) String() string {
 	return out.String()
 }
 
+// IndexExpression represents an expression that accesses an element of an array or map using an index expression.
+// The Left expression evaluates to the array or map, and the Index expression evaluates to the index or key to access.
+type IndexExpression struct {
+	Token token.Token // the '[' token
+	Left  Expression
+	Index Expression
+}
+
+func (ie *IndexExpression) expressionNode()      {}
+func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IndexExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString("[")
+	out.WriteString(ie.Index.String())
+	out.WriteString("])")
+
+	return out.String()
+}
+
 // TokenLiteral returns the token literal of the first statement in the program.
 // If the program has no statements, it returns an empty string.
 func (p *Program) TokenLiteral() string {
