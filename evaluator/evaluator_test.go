@@ -326,6 +326,21 @@ func TestBuiltinFunctions(t *testing.T) {
 	}
 }
 
+func TestArrayLiterals(t *testing.T) {
+	input := "[1, 2 * 2, 3 + 3]"
+	evaluated := testEval(input)
+	result := evaluated.(*object.Array)
+
+	if len(result.Elements) != 3 {
+		t.Errorf("array has wrong num elements. want=%d, got=%d",
+			3, len(result.Elements))
+	}
+
+	testIntegerObject(t, result.Elements[0], 1)
+	testIntegerObject(t, result.Elements[1], 4)
+	testIntegerObject(t, result.Elements[2], 6)
+}
+
 func testNullObject(t *testing.T, obj object.Object) bool {
 	if obj != NULL {
 		t.Errorf("object is not NULL. got=%T (%v)", obj, obj)
