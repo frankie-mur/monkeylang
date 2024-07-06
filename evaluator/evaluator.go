@@ -107,6 +107,9 @@ func Eval(node ast.Node, env *object.Enviroment) object.Object {
 		}
 		return &object.Array{Elements: elements}
 
+	case *ast.HashLiteral:
+		return evalHashExpression(node, env)
+
 	}
 
 	return nil
@@ -368,6 +371,35 @@ func evalExpressions(
 	}
 
 	return result
+}
+
+// evalHashExpression evaluates a hash literal expression in the given environment.
+// It creates a new hash object with key-value pairs based on the expressions in the hash literal.
+// If any of the key or value expressions result in an error, the function will return the error object.
+func evalHashExpression(he *ast.HashLiteral, env *object.Enviroment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for keyNode, valueNode := range he.Pairs {
+		key := Eval(keyNode, env)
+		if isError(key) {
+			return key
+		}
+
+		hashKey, ok := key.(object.Hashable)
+		if !ok {
+			return newError("unusable as hash key: %s", key.Type())
+		}
+
+		value := Eval(valueNode, env)
+		if isError(value) {
+			return value
+		}
+
+		hashed := hashKey.HashKey()
+		pairs[hashed] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.Hash{Pairs: pairs}
 }
 
 // Monkeylang evalutes truthy expressions (non NULL and non false)
