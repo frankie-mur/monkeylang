@@ -1,9 +1,21 @@
 package evaluator
 
-import "github.com/frankie-mur/monkeylang/object"
+import (
+	"fmt"
+
+	"github.com/frankie-mur/monkeylang/object"
+)
 
 // builtins is a map of built-in functions available in the Monkey programming language.
 var builtins = map[string]*object.Builtin{
+	"puts": {
+		Fn: func(args ...object.Object) object.Object {
+			for _, arg := range args {
+				fmt.Println(arg.Inspect())
+			}
+			return NULL
+		},
+	},
 	"len": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
