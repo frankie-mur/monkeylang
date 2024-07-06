@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"strings"
 
 	"github.com/frankie-mur/monkeylang/ast"
@@ -122,4 +123,42 @@ func (a *Array) Inspect() string {
 	out.WriteString("]")
 
 	return out.String()
+}
+
+// HashKey represents a unique identifier for an Object. The Type field
+// indicates the type of the Object, and the Value field contains a
+// hash value derived from the Object's contents.
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+// HashKey returns a unique identifier for the Boolean object. The Type field
+// indicates the type of the object, and the Value field contains a hash value
+// derived from the boolean value.
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+	return HashKey{Type: b.Type(), Value: value}
+}
+
+// HashKey returns a unique identifier for the Integer object. The Type field
+// indicates the type of the object, and the Value field contains a hash value
+// derived from the integer value.
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
+
+// HashKey returns a unique identifier for the String object. The Type field
+// indicates the type of the object, and the Value field contains a hash value
+// derived from the string value.
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
 }
